@@ -1,0 +1,93 @@
+import { HelpTooltip } from "@/components/HelpTooltip";
+import { Label } from "@/components/ui/label";
+import { Handle, NodeProps, Position, useReactFlow } from "@xyflow/react";
+import { useState } from "react";
+import { helpTooltips } from "../../helpContent";
+import { type FileParserNode } from "./types";
+import { WorkflowBlockInput } from "@/components/WorkflowBlockInput";
+import { useIsFirstBlockInWorkflow } from "../../hooks/useIsFirstNodeInWorkflow";
+import { useDebugStore } from "@/store/useDebugStore";
+import { cn } from "@/util/utils";
+import { NodeHeader } from "../components/NodeHeader";
+import { useParams } from "react-router-dom";
+
+function FileParserNode({ id, data }: NodeProps<FileParserNode>) {
+  const { updateNodeData } = useReactFlow();
+  const { debuggable, editable, label } = data;
+  const debugStore = useDebugStore();
+  const elideFromDebugging = debugStore.isDebugMode && !debuggable;
+  const { blockLabel: urlBlockLabel } = useParams();
+  const thisBlockIsPlaying =
+    urlBlockLabel !== undefined && urlBlockLabel === label;
+  const [inputs, setInputs] = useState({
+    fileUrl: data.fileUrl,
+  });
+
+  const isFirstWorkflowBlock = useIsFirstBlockInWorkflow({ id });
+
+  return (
+    <div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="a"
+        className="opacity-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="b"
+        className="opacity-0"
+      />
+      <div
+        className={cn(
+          "transform-origin-center w-[30rem] space-y-4 rounded-lg bg-white border border-gray-200 px-6 py-4 transition-all shadow-sm",
+          {
+            "pointer-events-none bg-gray-50 outline outline-2 outline-blue-400":
+              thisBlockIsPlaying,
+          },
+        )}
+      >
+        <NodeHeader
+          blockLabel={label}
+          disabled={elideFromDebugging}
+          editable={editable}
+          nodeId={id}
+          totpIdentifier={null}
+          totpUrl={null}
+          type="file_url_parser" // sic: the naming is not consistent
+        />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <div className="flex gap-2">
+                <Label className="text-xs text-gray-700">File URL</Label>
+                <HelpTooltip content={helpTooltips["fileParser"]["fileUrl"]} />
+              </div>
+              {isFirstWorkflowBlock ? (
+                <div className="flex justify-end text-xs text-gray-500">
+                  Tip: Use the {"+"} button to add parameters!
+                </div>
+              ) : null}
+            </div>
+
+            <WorkflowBlockInput
+              nodeId={id}
+              value={inputs.fileUrl}
+              onChange={(value) => {
+                if (!data.editable) {
+                  return;
+                }
+                setInputs({ ...inputs, fileUrl: value });
+                updateNodeData(id, { fileUrl: value });
+              }}
+              className="nopan text-xs"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { FileParserNode };

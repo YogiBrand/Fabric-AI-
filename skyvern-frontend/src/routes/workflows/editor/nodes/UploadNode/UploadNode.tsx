@@ -1,0 +1,66 @@
+import { HelpTooltip } from "@/components/HelpTooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Handle, NodeProps, Position } from "@xyflow/react";
+import { helpTooltips } from "../../helpContent";
+import { type UploadNode } from "./types";
+import { useDebugStore } from "@/store/useDebugStore";
+import { cn } from "@/util/utils";
+import { NodeHeader } from "../components/NodeHeader";
+import { useParams } from "react-router-dom";
+
+function UploadNode({ id, data }: NodeProps<UploadNode>) {
+  const { debuggable, editable, label } = data;
+  const debugStore = useDebugStore();
+  const elideFromDebugging = debugStore.isDebugMode && !debuggable;
+  const { blockLabel: urlBlockLabel } = useParams();
+  const thisBlockIsPlaying =
+    urlBlockLabel !== undefined && urlBlockLabel === label;
+
+  return (
+    <div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="a"
+        className="opacity-0"
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="b"
+        className="opacity-0"
+      />
+      <div
+        className={cn(
+          "transform-origin-center w-[30rem] space-y-4 rounded-lg bg-white border border-gray-200 px-6 py-4 transition-all shadow-sm",
+          {
+            "pointer-events-none bg-gray-50 outline outline-2 outline-blue-400":
+              thisBlockIsPlaying,
+          },
+        )}
+      >
+        <NodeHeader
+          blockLabel={label}
+          disabled={elideFromDebugging}
+          editable={editable}
+          nodeId={id}
+          totpIdentifier={null}
+          totpUrl={null}
+          type="upload_to_s3" // sic: the naming is not consistent
+        />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-gray-700">File Path</Label>
+              <HelpTooltip content={helpTooltips["upload"]["path"]} />
+            </div>
+            <Input value={data.path} className="nopan text-xs" disabled />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { UploadNode };
